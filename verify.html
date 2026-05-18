@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tekir - Doğrulama</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="assets/tekir-logo.png">
+</head>
+<body>
+  <div class="container">
+    <div class="logo-wrapper small">
+      <img src="assets/tekir-logo.png" alt="Tekir" class="logo">
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="state-card">
+      <div class="spinner"></div>
+      <p>Yükleniyor...</p>
+    </div>
+
+    <!-- Giriş yapılmamış -->
+    <div id="not-logged-in" class="state-card hidden">
+      <h2>⚠️ Giriş Yapmalısın</h2>
+      <p>Lütfen önce Tekir uygulamasına giriş yap, sonra QR'ı okut.</p>
+    </div>
+
+    <!-- Sıra hatası -->
+    <div id="wrong-order" class="state-card hidden">
+      <h2>🔒 Sıra Sende Değil!</h2>
+      <p id="wrong-order-msg">Önceki bulmacaları tamamlamalısın.</p>
+    </div>
+
+    <!-- Zaman hatası -->
+    <div id="too-fast" class="state-card hidden">
+      <h2>⏱️ Çok Hızlısın!</h2>
+      <p>Bir sonraki QR için <span id="countdown">2:00</span> beklemelisin.</p>
+      <p class="hint">Acele etme, etrafı keşfet 🐾</p>
+    </div>
+
+    <!-- Zaten tamamlanmış -->
+    <div id="already-done" class="state-card hidden">
+      <h2>✅ Zaten Tamamladın!</h2>
+      <p>Bu bulmacayı daha önce çözmüşsün. Sıradakine geç!</p>
+    </div>
+
+    <!-- Bulmaca -->
+    <div id="riddle-card" class="state-card hidden">
+      <h2 id="place-title">Mekan</h2>
+      <div class="riddle-box">
+        <p class="riddle-label">🧩 Bulmaca</p>
+        <p id="riddle-text"></p>
+      </div>
+
+      <div class="warning-box">
+        ⚠️ Cevabı <strong>küçük harflerle</strong>, <strong>boşluksuz</strong> ve <strong>Türkçe</strong> yazın.<br>
+        <span class="example">Örnek: "rejiodası"</span>
+      </div>
+
+      <input type="text" id="answer-input" placeholder="cevabınız..." autocomplete="off">
+      <button id="submit-btn" onclick="checkAnswer()">Doğrula</button>
+      <p id="error-msg" class="error hidden"></p>
+      <p id="attempts" class="attempts"></p>
+    </div>
+
+    <!-- Başarılı -->
+    <div id="success-card" class="state-card hidden">
+      <div class="success-icon">🎉</div>
+      <h2>Tebrikler!</h2>
+      <p>Bulmacayı çözdün!</p>
+      <div class="points-badge">+<span id="earned-points">100</span> puan</div>
+      <p class="hint">Uygulamaya geri dön ve sıradaki bulmacayı gör!</p>
+    </div>
+  </div>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/verify.js"></script>
+</body>
+</html>
