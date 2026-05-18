@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/r/:place", "destination": "/verify.html?place=:place" }
+  ]
+}
