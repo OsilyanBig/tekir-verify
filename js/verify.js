@@ -1,9 +1,11 @@
-import { db } from './firebase-config.js';
+import { db, auth } from './firebase-config.js';
 import {
   doc, getDoc, updateDoc, setDoc, arrayUnion, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import {
+  signInWithEmailAndPassword, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
-// 🎯 OKUL ROTASI MEKANLARI
 const PLACES = {
   reji: {
     order: 1,
@@ -44,19 +46,16 @@ const PLACES = {
 
 const MIN_WAIT_SECONDS = 120;
 
-// URL'den parametreleri al
 const urlParams = new URLSearchParams(window.location.search);
 const placeKey = urlParams.get('place');
-const userUid = urlParams.get('uid');  // ← YENİ: UID URL'den geliyor
+let userUid = urlParams.get('uid');
 const place = PLACES[placeKey];
 
 let userDocRef = null;
 
-// Sayfa yüklendiğinde başlat
 window.addEventListener('DOMContentLoaded', async () => {
   hideAll();
 
-  // Geçersiz QR
   if (!place) {
     show('not-logged-in');
     document.querySelector('#not-logged-in h2').textContent = "❌ Geçersiz QR";
@@ -64,26 +63,65 @@ window.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // UID yok = uygulamadan açılmadı
-  if (!userUid) {
-    show('not-logged-in');
-    document.querySelector('#not-logged-in h2').textContent = "📱 Uygulamadan Okut!";
-    document.querySelector('#not-logged-in p').textContent = "Bu QR'ı tarayıcıdan değil, Tekir uygulamasından okutmalısın.";
+  // UID varsa direkt devam et
+  if (userUid) {
+    userDocRef = doc(db, "users", userUid);
+    await checkProgress();
     return;
   }
 
-  userDocRef = doc(db, "users", userUid);
-  await checkProgress();
+  // UID yoksa → Firebase Auth dinle veya login formu göster
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      userUid = user.uid;
+      userDocRef = doc(db, "users", user.uid);
+      await checkProgress();
+    } else {
+      showLoginForm();
+    }
+  });
 });
+
+function showLoginForm() {
+  show('login-form');
+}
+
+window.doLogin = async function() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  const errorEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  if (!email || !password) {
+    errorEl.textContent = 'E-posta ve şifre gerekli';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Giriş yapılıyor...';
+  errorEl.classList.add('hidden');
+
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    userUid = cred.user.uid;
+    userDocRef = doc(db, "users", cred.user.uid);
+    await checkProgress();
+  } catch (e) {
+    errorEl.textContent = '❌ E-posta veya şifre hatalı';
+    errorEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Giriş Yap';
+  }
+};
 
 async function checkProgress() {
   const snap = await getDoc(userDocRef);
 
-  // Kullanıcı Firestore'da yoksa
   if (!snap.exists()) {
     show('not-logged-in');
     document.querySelector('#not-logged-in h2').textContent = "❌ Kullanıcı Bulunamadı";
-    document.querySelector('#not-logged-in p').textContent = "Hesabın sistemde bulunamadı. Uygulamaya tekrar giriş yap.";
+    document.querySelector('#not-logged-in p').textContent = "Hesabın sistemde bulunamadı. Uygulamadan kayıt ol.";
     return;
   }
 
@@ -91,13 +129,11 @@ async function checkProgress() {
   const completed = data.completedSteps_okul || [];
   const lastQRTime = data.lastQRTime_okul;
 
-  // 1️⃣ Zaten tamamlanmış mı?
   if (completed.includes(place.order)) {
     show('already-done');
     return;
   }
 
-  // 2️⃣ Sıra kontrolü
   const expectedOrder = completed.length + 1;
   if (place.order !== expectedOrder) {
     show('wrong-order');
@@ -106,7 +142,6 @@ async function checkProgress() {
     return;
   }
 
-  // 3️⃣ Zaman kontrolü (ilk adım hariç)
   if (lastQRTime && place.order > 1) {
     const lastTime = lastQRTime.toDate();
     const diffSeconds = (Date.now() - lastTime.getTime()) / 1000;
@@ -119,7 +154,6 @@ async function checkProgress() {
     }
   }
 
-  // ✅ Bulmacayı göster
   showRiddle();
 }
 
@@ -207,8 +241,9 @@ function startCountdown(seconds) {
 
 function hideAll() {
   ['loading', 'not-logged-in', 'wrong-order', 'too-fast', 
-   'already-done', 'riddle-card', 'success-card'].forEach(id => {
-    document.getElementById(id).classList.add('hidden');
+   'already-done', 'riddle-card', 'success-card', 'login-form'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
   });
 }
 
