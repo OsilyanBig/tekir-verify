@@ -1,5 +1,7 @@
 {
   "rewrites": [
     { "source": "/r/:place", "destination": "/verify.html?place=:place" }
-  ]
+  ],
+  "cleanUrls": false,
+  "trailingSlash": false
 }
