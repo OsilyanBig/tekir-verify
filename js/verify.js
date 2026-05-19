@@ -44,7 +44,7 @@ const PLACES = {
   }
 };
 
-const MIN_WAIT_SECONDS = 120;
+const MIN_WAIT_SECONDS = 0;
 
 // URL'den place al (hem ?place=xxx hem /r/xxx formatını destekler)
 const urlParams = new URLSearchParams(window.location.search);
