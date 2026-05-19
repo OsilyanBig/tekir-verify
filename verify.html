@@ -19,26 +19,34 @@
       <p>Yükleniyor...</p>
     </div>
 
-    <!-- Giriş yapılmamış -->
-    <div id="not-logged-in" class="state-card hidden">
-      <h2>⚠️ Giriş Yapmalısın</h2>
-      <p>Lütfen önce Tekir uygulamasına giriş yap, sonra QR'ı okut.</p>
+    <!-- Login Form (UID yoksa) -->
+    <div id="login-form" class="state-card hidden">
+      <h2>🔐 Giriş Yap</h2>
+      <p>Devam etmek için Tekir hesabınla giriş yap:</p>
+      <input type="email" id="login-email" placeholder="E-posta" autocomplete="email">
+      <input type="password" id="login-password" placeholder="Şifre" autocomplete="current-password">
+      <button id="login-btn" onclick="doLogin()">Giriş Yap</button>
+      <p id="login-error" class="error hidden"></p>
+      <p class="hint">Hesabın yoksa, önce Tekir uygulamasından kayıt ol.</p>
     </div>
 
-    <!-- Sıra hatası -->
+    <!-- Hata mesajları -->
+    <div id="not-logged-in" class="state-card hidden">
+      <h2>⚠️ Hata</h2>
+      <p>Bir sorun oluştu.</p>
+    </div>
+
     <div id="wrong-order" class="state-card hidden">
       <h2>🔒 Sıra Sende Değil!</h2>
       <p id="wrong-order-msg">Önceki bulmacaları tamamlamalısın.</p>
     </div>
 
-    <!-- Zaman hatası -->
     <div id="too-fast" class="state-card hidden">
       <h2>⏱️ Çok Hızlısın!</h2>
       <p>Bir sonraki QR için <span id="countdown">2:00</span> beklemelisin.</p>
       <p class="hint">Acele etme, etrafı keşfet 🐾</p>
     </div>
 
-    <!-- Zaten tamamlanmış -->
     <div id="already-done" class="state-card hidden">
       <h2>✅ Zaten Tamamladın!</h2>
       <p>Bu bulmacayı daha önce çözmüşsün. Sıradakine geç!</p>
@@ -53,8 +61,7 @@
       </div>
 
       <div class="warning-box">
-        ⚠️ Cevabı <strong>küçük harflerle</strong>, <strong>boşluksuz</strong> ve <strong>Türkçe</strong> yazın.<br>
-        <span class="example">Örnek: "rejiodası"</span>
+        ⚠️ Cevabı <strong>küçük harflerle</strong>, <strong>boşluksuz</strong> ve <strong>Türkçe</strong> yazın.
       </div>
 
       <input type="text" id="answer-input" placeholder="cevabınız..." autocomplete="off">
