@@ -1,70 +1,62 @@
-import { db, auth } from './firebase-config.js';
+import { db } from './firebase-config.js';
 import {
-  doc, getDoc, updateDoc, setDoc, arrayUnion, serverTimestamp, Timestamp
+  doc, getDoc, updateDoc, setDoc, arrayUnion, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-import {
-  onAuthStateChanged, signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
 // 🎯 OKUL ROTASI MEKANLARI
 const PLACES = {
   reji: {
     order: 1,
-    name: "Reji Odası",
+    name: "1. Mekan",
     riddle: "Sahne arkasındayım ama her şeyi ben yönetirim.",
     answers: ["rejiodası", "rejiodasi", "reji"],
     points: 100
   },
   mudur: {
     order: 2,
-    name: "Müdür Odası",
+    name: "2. Mekan",
     riddle: "Bir geminin kaptanı vardır, bir ordunun komutanı. Benim de biricik sahibim var.",
     answers: ["müdürodası", "muduroldasi", "mudurodasi", "müdür", "mudur"],
     points: 100
   },
   bilgiislem: {
     order: 3,
-    name: "Bilgi İşlem",
+    name: "3. Mekan",
     riddle: "Kâğıt tükenir, kalem biter, mürekkep kurur. İlk aklına gelen yer benim.",
     answers: ["bilgiişlem", "bilgiislem"],
     points: 100
   },
   nobetci: {
     order: 4,
-    name: "Nöbetçi Masası",
+    name: "4. Mekan",
     riddle: "Ne kapıda dururum ne sınıfta otururum, Bir yerden bir yere mesajım ben.",
     answers: ["nöbetçimasası", "nobetcimasasi", "nöbetçi", "nobetci"],
     points: 100
   },
   cayocagi: {
     order: 5,
-    name: "Çay Ocağı",
+    name: "5. Mekan",
     riddle: "Sohbetin en iyi arkadaşıyım. Mutfak sayılmam, salon da değilim.",
     answers: ["çayocağı", "cayocagi", "çay", "cay"],
-    points: 150 // son adım bonus
+    points: 150
   }
 };
 
-const MIN_WAIT_SECONDS = 120; // 2 dakika
-const ROUTE_ID = "okul_turu";
+const MIN_WAIT_SECONDS = 120;
 
-// URL'den mekan al: verify.html?place=reji
+// URL'den parametreleri al
 const urlParams = new URLSearchParams(window.location.search);
 const placeKey = urlParams.get('place');
+const userUid = urlParams.get('uid');  // ← YENİ: UID URL'den geliyor
 const place = PLACES[placeKey];
 
-let currentUser = null;
 let userDocRef = null;
 
-// 🔐 Auth kontrolü
-onAuthStateChanged(auth, async (user) => {
+// Sayfa yüklendiğinde başlat
+window.addEventListener('DOMContentLoaded', async () => {
   hideAll();
-  
-  if (!user) {
-    show('not-logged-in');
-    return;
-  }
 
+  // Geçersiz QR
   if (!place) {
     show('not-logged-in');
     document.querySelector('#not-logged-in h2').textContent = "❌ Geçersiz QR";
@@ -72,15 +64,30 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  currentUser = user;
-  userDocRef = doc(db, "users", user.uid);
+  // UID yok = uygulamadan açılmadı
+  if (!userUid) {
+    show('not-logged-in');
+    document.querySelector('#not-logged-in h2').textContent = "📱 Uygulamadan Okut!";
+    document.querySelector('#not-logged-in p').textContent = "Bu QR'ı tarayıcıdan değil, Tekir uygulamasından okutmalısın.";
+    return;
+  }
+
+  userDocRef = doc(db, "users", userUid);
   await checkProgress();
 });
 
 async function checkProgress() {
   const snap = await getDoc(userDocRef);
-  let data = snap.exists() ? snap.data() : {};
 
+  // Kullanıcı Firestore'da yoksa
+  if (!snap.exists()) {
+    show('not-logged-in');
+    document.querySelector('#not-logged-in h2').textContent = "❌ Kullanıcı Bulunamadı";
+    document.querySelector('#not-logged-in p').textContent = "Hesabın sistemde bulunamadı. Uygulamaya tekrar giriş yap.";
+    return;
+  }
+
+  const data = snap.data();
   const completed = data.completedSteps_okul || [];
   const lastQRTime = data.lastQRTime_okul;
 
@@ -94,11 +101,8 @@ async function checkProgress() {
   const expectedOrder = completed.length + 1;
   if (place.order !== expectedOrder) {
     show('wrong-order');
-    const expectedPlace = Object.values(PLACES).find(p => p.order === expectedOrder);
     document.getElementById('wrong-order-msg').textContent = 
-      expectedPlace 
-        ? `Önce "${expectedPlace.name}" bulmacasını çözmelisin.`
-        : `Bulmacaları sırayla çözmelisin. Sıradaki adım: ${expectedOrder}`;
+      `Önce ${expectedOrder}. bulmacayı çözmelisin. Sıralamayı atlayamazsın!`;
     return;
   }
 
@@ -124,7 +128,6 @@ function showRiddle() {
   document.getElementById('place-title').textContent = place.name;
   document.getElementById('riddle-text').textContent = place.riddle;
   
-  // Enter ile gönder
   document.getElementById('answer-input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') checkAnswer();
   });
@@ -135,9 +138,7 @@ window.checkAnswer = async function() {
   const errorMsg = document.getElementById('error-msg');
   const btn = document.getElementById('submit-btn');
   
-  let answer = input.value.trim().toLowerCase();
-  // Boşlukları kaldır
-  answer = answer.replace(/\s+/g, '');
+  let answer = input.value.trim().toLowerCase().replace(/\s+/g, '');
   
   if (!answer) {
     showError("Lütfen bir cevap yaz!");
@@ -147,7 +148,6 @@ window.checkAnswer = async function() {
   btn.disabled = true;
   errorMsg.classList.add('hidden');
 
-  // Cevap doğru mu?
   const isCorrect = place.answers.includes(answer);
 
   if (isCorrect) {
@@ -157,8 +157,6 @@ window.checkAnswer = async function() {
   } else {
     showError("❌ Yanlış cevap, tekrar düşün!");
     btn.disabled = false;
-    
-    // Yanlış deneme sayısını arttır (opsiyonel)
     trackAttempt();
   }
 };
@@ -172,10 +170,6 @@ async function saveProgress() {
     completedSteps_okul: arrayUnion(place.order),
     lastQRTime_okul: serverTimestamp(),
     points: currentPoints + place.points,
-    [`okul_completed_${place.order}`]: {
-      placeName: place.name,
-      completedAt: serverTimestamp()
-    }
   }, { merge: true });
 }
 
