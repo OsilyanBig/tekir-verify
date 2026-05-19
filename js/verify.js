@@ -46,8 +46,18 @@ const PLACES = {
 
 const MIN_WAIT_SECONDS = 120;
 
+// URL'den place al (hem ?place=xxx hem /r/xxx formatını destekler)
 const urlParams = new URLSearchParams(window.location.search);
-const placeKey = urlParams.get('place');
+let placeKey = urlParams.get('place');
+
+// Eğer ?place yoksa, URL path'inden al (/r/reji gibi)
+if (!placeKey) {
+  const pathMatch = window.location.pathname.match(/\/r\/([^/?]+)/);
+  if (pathMatch) {
+    placeKey = pathMatch[1];
+  }
+}
+
 let userUid = urlParams.get('uid');
 const place = PLACES[placeKey];
 
