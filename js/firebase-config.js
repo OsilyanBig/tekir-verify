@@ -2,14 +2,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebas
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
-// ⚠️ Firebase Console > Project Settings'ten al
 const firebaseConfig = {
-  apiKey: "AIzaSyD5BVgidTB_E9y_rvdRHUstFfF1yqqCF-M",
-  authDomain: "tekir-1e8b3.firebaseapp.com",
-  projectId: "tekir-1e8b3",
-  storageBucket: "tekir-1e8b3.firebasestorage.app",
-  messagingSenderId: "350639938595",
-  appId: "1:350639938595:web:b26685dd3d403c23156596"
+  apiKey: "AIzaSyCdVzVAtQhPV7B_JXuKfhCP9DPGVCimGrY",
+  authDomain: "tekirnew.firebaseapp.com",
+  projectId: "tekirnew",
+  storageBucket: "tekirnew.firebasestorage.app",
+  messagingSenderId: "290797859032",
+  appId: "1:290797859032:web:40ed3c52b202ebe70267ad",
+  measurementId: "G-3E9G9KFPTC"
 };
 
 const app = initializeApp(firebaseConfig);
